@@ -1,0 +1,6 @@
+# -*- python -*-
+Import('env')
+
+pdf = env.Latex('http2.tex')
+env.Default(pdf)
+
