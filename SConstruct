@@ -68,7 +68,7 @@ def newTmpDir(env, usr):
 env.AddMethod(newTmpDir)
 
 def subDir(env, subd):
-    env.SConscript('%s/SConscript' % subd, exports='env')
+    return env.SConscript('%s/SConscript' % subd, exports='env')
 
 env.AddMethod(subDir)
 
@@ -435,6 +435,7 @@ def luamp(env, source):
     source = op.basename(env.File(source).path)
     root, _ = op.splitext(op.basename(source))
     env.Command(root + '.pdf', source, build)
+    return env.File(root + '.pdf')
 
 env.AddMethod(luamp)
 

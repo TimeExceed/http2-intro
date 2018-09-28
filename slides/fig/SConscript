@@ -1,0 +1,17 @@
+# -*- python -*-
+Import('env')
+
+srcs = ['frame_common.lua',
+        'headers_frame.lua',
+        'continuation_frame.lua',
+        'data_frame.lua',
+        'push_promise_frame.lua',
+        'window_update_frame.lua',
+        'priority_tree.lua',
+        'priority_frame.lua',
+        'rst_stream_frame.lua',
+        'goaway_frame.lua',
+        'ping_frame.lua']
+pdfs = [env.luamp(x) for x in srcs]
+Return('pdfs')
+

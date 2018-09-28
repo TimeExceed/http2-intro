@@ -1,6 +1,8 @@
 # -*- python -*-
 Import('env')
+figs = env.subDir('fig')
 
 pdf = env.Latex('http2.tex')
+env.Depends(pdf, figs)
 env.Default(pdf)
 
