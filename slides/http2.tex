@@ -32,7 +32,7 @@
   \begin{block}{~}
     \begin{itemize}
     \item connectivity
-    \item secure: TLS/SSL support
+    \item secure: TLS support
     \item eco-system
     \item explicitly upgradable app-layer: upgrading depends on explicit communications.
     \item high speed
@@ -42,7 +42,7 @@
       \end{itemize}
     \item multiplexing
     \item tunable: flow control, priority
-    \item app-aware health checking
+    \item app-aware health measuring
     \end{itemize}
   \end{block}
 \end{frame}
@@ -56,7 +56,7 @@
     \begin{itemize}
     \item best connectivity
     \item secure: HTTPS
-    \item eco-system: curl
+    \item eco-system: curl, jetty, netty, \dots
     \item explicitly upgradable app-layer: accept type/content type
     \item multiplexing: one-way one-shot request-reply model
       \begin{itemize}
@@ -106,10 +106,7 @@
     \item over raw TCP with handshaking over HTTP
     \item TLS/SSL + origin-based security model
     \item implicit upgrading
-    \item overhead
-      \begin{itemize}
-      \item very low overhead: 2-byte in extreme cases
-      \end{itemize}
+    \item very low overhead: minimal 2-byte
     \item duplexing: two-way streaming
     \item tunable: one purpose per connection. little can/should be tuned.
     \item ping-pong frames with app data
@@ -138,14 +135,15 @@
     \begin{center}
       \begin{tabular}{|l|l|l|}
         \hline
-        ~& HTTP/1.1 & HTTP/2(rfc7540)\\
+        ~& HTTP/1.1 & HTTP/2\\
         \hline
+        scheme & http/https & http/https \\
         connection & one-shot & keep-alive\\
-        multiplexing & one-way request-reply & two-way streaming\\
-        headers & redundant & HPACK(rfc7541)\\
+        multiplexing & $\times$ & $\surd$\\
+        headers & redundant & HPACK\\
         cookies & total & incremental\\
-        flow control & - & Y\\
-        priority & - & Y\\
+        flow control & $\times$ & $\surd$\\
+        priority & $\times$ & $\surd$\\
         \hline
       \end{tabular}
     \end{center}
@@ -159,7 +157,7 @@
     \begin{itemize}
     \item Connection: a TCP connection with settings.
     \item Frame: the smallest pieces over HTTP/2 connections.
-    \item Stream: two-way multiplex data flows
+    \item Stream: multiplexing data flows
     \end{itemize}
   \end{block}
 \end{frame}
@@ -173,31 +171,23 @@
   \end{block}
 \end{frame}
 
-\subsection{Request-Reply Stream}
+\subsection{Data Stream}
 
 \begin{frame}
-  \frametitle{Stream}
+  \frametitle{Data Stream}
 
-  \begin{block}{~}
+  \begin{block}{Stream}
     \begin{itemize}
     \item Multiple concurrently active streams over a same HTTP/2 connection.
     \item Either of peers can establish streams.
     \item The order of frames on a same stream is significant;\\
-      that among different streams is controlled by flow-control and priority.
+      that among different streams is dominated by flow-control and priority.
     \item Streams are identified by an integer.
+      \begin{itemize}
+      \item 32-bit signed nonnegative integers.
+      \item odd numbers for client; even numbers for server; 0 for connection.
+      \end{itemize}
     \item Streams, like TCP, can be half-closed.
-    \end{itemize}
-  \end{block}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Stream}
-
-  \begin{block}{Identifiers}
-    \begin{itemize}
-    \item 31-bit unsigned integers.
-    \item odd numbers for client; even numbers for server; 0 for connection.
-    \item ID of a newly established stream MUST be greater than IDs of all opened or reserved streams of that endpoint.
     \end{itemize}
   \end{block}
 \end{frame}
@@ -205,23 +195,23 @@
 \subsubsection{Structure}
 
 \begin{frame}
-  \frametitle{Request-Reply Stream}
+  \frametitle{Data Stream}
 
-  \begin{block}{Request-Reply Stream}
+  \begin{block}{Request-Response}
     \begin{itemize}
-    \item Any peer can start a stream, with
+    \item Any peer can launch a stream, containing
       \begin{itemize}
       \item a HEADERS frame
       \item optional CONTINUATION frames to complete headers
       \item optional DATA frames w.r.t.\ HTTP/1.1 body.
       \end{itemize}
-    \item The remote peer replies, with the same structure of frames. 
+    \item The remote peer responds, with the same structure of frames. 
     \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Request-Reply Stream}
+  \frametitle{Data Stream}
 
   \begin{block}{HEADERS(0x1) frame}
     \begin{center}
@@ -237,7 +227,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Request-Reply Stream}
+  \frametitle{Data Stream}
 
   \begin{block}{CONTINUATION(0x9) frame}
     \begin{center}
@@ -250,7 +240,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Request-Reply Stream}
+  \frametitle{Data Stream}
 
   \begin{block}{DATA(0x0) frame}
     \begin{center}
@@ -381,7 +371,7 @@
     \begin{itemize}
     \item Server-push allows, in spite of ``server'' in its name, any peer to pre-emptively send response along with ``promised'' request to another peer.
     \item This is useful when one peer knows the opposite will be interested in something.
-    \item A server-push starts with
+    \item A server-push stream contains
       \begin{enumerate}
       \item a PUSH\_PROMISE frame
       \item optional CONTINUATION frames
